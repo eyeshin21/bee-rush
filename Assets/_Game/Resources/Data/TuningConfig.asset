@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45af9f858ea94294da7dd9c3cc588e9f, type: 3}
+  m_Name: TuningConfig
+  m_EditorClassIdentifier: Assembly-CSharp::HoneyBeeRush.Gameplay.Config.TuningConfig
+  m_globalSpeedMultiplier: 1
+  m_layout:
+    hexSize: 0.5
+    tileDepth: 0.62
+    tileGapScale: 0.95
+    tileMeshCircumRadius: 1.05
+    tileMeshDepth: 4
+    layerSpacing: 1
+    cullEnclosedCells: 1
+    boardCentre: {x: 0, y: 1.685}
+    boardFitWidth: 5.15
+    boardFitHeight: 4.38
+    referenceGridScale: 1.25
+    boardRotateFitScale: 1.3
+    boardPanelClearance: 0.1
+    panelSize: 6.04
+    panelHeight: 4.13
+    boardPanelPadding: 0.25
+    panelZ: 0.95
+    slotRowY: -1.3
+    slotZ: -0.55
+    slotSpacing: 0.961
+    slotRadius: 0.295
+    crateRadius: 0.468
+    queueTopY: -4.8
+    queueRowSpacing: 1.22
+    queueColSpacing: 1.42
+    queueZ: -0.5
+    queueVisibleRows: 3
+    gridCellPitch: 1.1
+    gridBoardFitWidth: 11.5
+    gridBoardTopY: -2.28
+    gridBoardZ: -0.5
+    hivePosition: {x: 0.0484, y: 4.4395, z: -2.4268}
+    hiveScale: 1.857
+    hiveRotation: {x: 41.6722, y: 185.0707, z: 0}
+    beeCruiseZ: -1.62
+    beeScale: 0.324
+    backgroundZ: 9
+    canopyZ: -3.2
+    canopyYOffset: 2.98
+    groundDecorZ: -0.2
+  m_boardRotationEnabled: 1
+  m_boardDragDegreesPerScreenHeight: 260
+  m_boardMaxPitch: 75
+  m_boardInertiaDamping: 5
+  m_boardMinInertiaSpeed: 4
+  m_defaultGridWidth: 15
+  m_defaultGridHeight: 20
+  m_gridRowBudget: 8
+  m_useAuthoredLaunchSlots: 1
+  m_startingSlots: 5
+  m_maxSlots: 7
+  m_beeSpawnInterval: 0.18
+  m_crateHopStepDuration: 0.1
+  m_crateFlySpeed: 15
+  m_crateJumpHeight: 0.85
+  m_crateJumpHeightPerUnit: 0.16
+  m_crateJumpMaxHeight: 2.1
+  m_crateJumpMinDuration: 0.34
+  m_crateJumpMaxDuration: 0.62
+  m_crateJumpTilt: 14
+  m_crateJumpDepthPop: 0.45
+  m_loseDetectDelay: 2.5
+  m_winSettleDelay: 0.95
+  m_endGameDelay: 1.5
+  m_reviveClearedCrates: 3
+  m_coinsPerWin: 50
+  m_bonusCoinsPerHoneyPercent: 0
+  m_panelFadeDuration: 0.25
+  m_panelPopDuration: 0.5
+  m_progressAnimDuration: 0.2
+  m_hudAppearDelay: 0.26
