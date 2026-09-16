@@ -519,10 +519,10 @@ MonoBehaviour:
   m_model: {fileID: 6911768762983505325}
   m_activeHeightAxis: {x: 0, y: 1, z: 0}
   m_activeHeightScale: 1.5
-  m_inactiveTextAlpha: 0.3
+  m_inactiveTextAlpha: 0.85
   m_stateTransitionDuration: 0.22
   m_lid: {fileID: 147557114532757592}
-  m_lidOpenEuler: {x: -20, y: 0, z: 0}
+  m_lidOpenEuler: {x: -45, y: 0, z: 0}
   m_lidOpenDuration: 0.16
   m_lidCloseDuration: 0.12
   m_lidReleaseThreshold: 0.9

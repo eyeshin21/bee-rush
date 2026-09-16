@@ -18,8 +18,8 @@ Material:
   - TCP2_SHADOW_LIGHT_COLOR
   - TCP2_SPECULAR
   - TCP2_SPECULAR_STYLIZED
+  m_InvalidKeywords:
   - TCP2_UV_NORMALS_FULL
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -128,11 +128,11 @@ Material:
     - _OutlineWidth: 0
     - _Parallax: 0.02
     - _RampBands: 4
-    - _RampBandsSmoothing: 1
+    - _RampBandsSmoothing: 0.42
     - _RampOffset: 0
     - _RampScale: 1
-    - _RampSmoothing: 1
-    - _RampThreshold: 0.685
+    - _RampSmoothing: 0.42
+    - _RampThreshold: 0.5
     - _RampType: 0
     - _ReceiveShadowsOff: 1
     - _ReflectionMapType: 0
@@ -167,7 +167,7 @@ Material:
     - _UseSpecular: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.64705884, g: 0.69803923, b: 0.83137256, a: 1}
+    - _BaseColor: {r: 0.90588236, g: 0.972549, b: 0.99607843, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HColor: {r: 1, g: 1, b: 1, a: 1}
@@ -175,6 +175,7 @@ Material:
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 0}
     - _ReflectionColor: {r: 1, g: 1, b: 1, a: 1}
     - _RimColor: {r: 0.8, g: 0.8, b: 0.8, a: 0.5}
-    - _SColor: {r: 0.5019608, g: 0.5568628, b: 0.6313726, a: 1}
+    - _SColor: {r: 0.8745098, g: 0.9019608, b: 0.9607843, a: 1}
     - _SpecularColor: {r: 0.032429244, g: 0.032429244, b: 0.032429244, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

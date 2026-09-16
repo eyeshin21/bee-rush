@@ -30,7 +30,7 @@ Material:
     - _RimPower: 4.2
     - _RimStrength: 0.16
     m_Colors:
-    - _Color: {r: 0.101960786, g: 0.8509804, b: 0.92941177, a: 1}
+    - _Color: {r: 0.25882354, g: 0.84313726, b: 0.93333334, a: 1}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
     - _ShadeTint: {r: 0.55, g: 0.52, b: 0.62, a: 1}
   m_BuildTextureStacks: []

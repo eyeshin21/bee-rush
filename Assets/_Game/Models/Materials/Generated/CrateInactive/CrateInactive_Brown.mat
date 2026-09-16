@@ -13,8 +13,12 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - TCP2_REFLECTIONS_FRESNEL
+  - TCP2_RIM_LIGHTING
   - TCP2_RIM_LIGHTING_LIGHTMASK
   - TCP2_SHADOW_LIGHT_COLOR
+  - TCP2_SPECULAR
+  - TCP2_SPECULAR_STYLIZED
+  - _RECEIVE_SHADOWS_OFF
   m_InvalidKeywords:
   - TCP2_UV_NORMALS_FULL
   m_LightmapFlags: 4
@@ -125,27 +129,27 @@ Material:
     - _OutlineWidth: 1
     - _Parallax: 0.02
     - _RampBands: 4
-    - _RampBandsSmoothing: 0.1
+    - _RampBandsSmoothing: 0.42
     - _RampOffset: 0
     - _RampScale: 1
-    - _RampSmoothing: 0.1
-    - _RampThreshold: 0.75
+    - _RampSmoothing: 0.42
+    - _RampThreshold: 0.5
     - _RampType: 0
-    - _ReceiveShadowsOff: 1
+    - _ReceiveShadowsOff: 0
     - _ReflectionMapType: 0
     - _ReflectionSmoothness: 0.5
     - _RenderingMode: 0
-    - _RimMax: 1
-    - _RimMin: 0.5
+    - _RimMax: 0.98
+    - _RimMin: 0.65
     - _ShadowColorLightAtten: 1
     - _SingleIndirectColor: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SpecularMapType: 0
-    - _SpecularRoughness: 0.5
-    - _SpecularToonSize: 0.25
-    - _SpecularToonSmoothness: 0.05
-    - _SpecularType: 0
+    - _SpecularRoughness: 0.65
+    - _SpecularToonSize: 0.04
+    - _SpecularToonSmoothness: 0.03
+    - _SpecularType: 1
     - _SrcBlend: 1
     - _UVSec: 0
     - _UseAlphaTest: 0
@@ -158,21 +162,21 @@ Material:
     - _UseOcclusion: 0
     - _UseOutline: 0
     - _UseReflections: 0
-    - _UseRim: 0
+    - _UseRim: 1
     - _UseRimLightMask: 1
     - _UseShadowTexture: 0
-    - _UseSpecular: 0
+    - _UseSpecular: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.4853528, g: 0.39066476, b: 0.33077648, a: 1}
+    - _BaseColor: {r: 0.775098, g: 0.52858317, b: 0.3268892, a: 1}
     - _Color: {r: 0.66518503, g: 0.66518503, b: 0.66518503, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HColor: {r: 0.92, g: 0.92, b: 0.95, a: 1}
     - _MatCapColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
     - _ReflectionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _RimColor: {r: 0.8, g: 0.8, b: 0.8, a: 0.5}
-    - _SColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _SpecularColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
+    - _RimColor: {r: 0.7, g: 0.8, b: 0.95, a: 0.15}
+    - _SColor: {r: 0.68, g: 0.72, b: 0.82, a: 1}
+    - _SpecularColor: {r: 0.32, g: 0.32, b: 0.32, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
