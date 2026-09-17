@@ -23,7 +23,6 @@ namespace HoneyBeeRush.EditorTools
 
         private const ColorType PreviewColor = ColorType.Yellow;
 
-        private const float LegacyCellCircumRadius = 1.10606f;
         private const float LegacyBeeLength = 0.3240f;
         private const float LegacyShardEdge = 1f;
 
@@ -75,11 +74,6 @@ namespace HoneyBeeRush.EditorTools
             try
             {
                 LayoutConfig layout = LoadTunedLayout();
-                float rootXY = layout.hexSize / layout.tileMeshCircumRadius * layout.tileGapScale;
-                float rootZ = layout.tileDepth / layout.tileMeshDepth;
-                float meshRadius = MaxPlanarRadius(hexa);
-                float inPlane = LegacyCellCircumRadius / meshRadius;
-                float depth = inPlane * (rootXY / rootZ);
 
                 StripRootRenderer(root);
 
@@ -94,7 +88,6 @@ namespace HoneyBeeRush.EditorTools
                 visual.SetSiblingIndex(0);
                 visual.localPosition = Vector3.zero;
                 visual.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                visual.localScale = new Vector3(inPlane, depth, inPlane);
 
                 var renderer = visual.GetComponentInChildren<MeshRenderer>(true);
                 var filter = visual.GetComponentInChildren<MeshFilter>(true);
@@ -112,8 +105,20 @@ namespace HoneyBeeRush.EditorTools
                 SetRef(so, "m_lockRenderer", lockRenderer);
                 so.ApplyModifiedPropertiesWithoutUndo();
 
+                root.transform.localScale = Vector3.one;
+                float meshRadius;
+                float meshDepth;
+                int depthAxis;
+                if (controller.MeasureVisualMesh(out meshRadius, out meshDepth, out depthAxis) && visual != null)
+                {
+                    visual.localScale = CellController.ComputeVisualScale(controller, layout.CellWidth, layout.CellDepth);
+                    controller.BakeVisualReference(layout.CellWidth, layout.CellDepth, depthAxis);
+                }
+                controller.ApplyVisualSizing(visual != null ? visual.localScale : Vector3.one, layout.CellWidth, layout.CellDepth);
+
                 PrefabUtility.SaveAsPrefabAsset(root, CellPrefabPath);
-                Report.AppendLine("  Cell: Hexa.fbx, visual scale " + visual.localScale.ToString("F1") + ", renderer rewired to child");
+                Report.AppendLine("  Cell: Hexa.fbx, root scale 1, visual scale " + visual.localScale.ToString("F2") +
+                                  " (width " + layout.CellWidth.ToString("F3") + ", depth " + layout.CellDepth.ToString("F3") + ")");
             }
             finally
             {
