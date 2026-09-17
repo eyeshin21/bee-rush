@@ -514,7 +514,15 @@ namespace HoneyBeeRush.Bees
             if (ra < 1f)
             {
                 if (cosAB >= InsideDirectDot) return goal;
-                return FromUnit(da * OrbitRadius);
+                Vector3 d = da;
+                if (goal.y > from.y)
+                {
+                    d.y = Mathf.Max(0.2f, d.y);
+                    d.z = Mathf.Min(-0.4f, d.z);
+                    float dsq = d.sqrMagnitude;
+                    if (dsq > 1e-6f) d /= Mathf.Sqrt(dsq);
+                }
+                return FromUnit(d * OrbitRadius);
             }
 
             Vector3 dir;
@@ -797,17 +805,24 @@ namespace HoneyBeeRush.Bees
                 {
                     float blend = 1f - Mathf.Clamp01(lateral / Mathf.Max(0.0001f, exit));
                     blend = blend * blend * (3f - 2f * blend);
-                    goal = w + n * Mathf.Lerp(lane, hover, blend);
+                    goal = w + n * Mathf.Min(Mathf.Max(0f, along), Mathf.Lerp(lane, 0f, blend));
 
-                    Vector3 hoverPt = w + n * hover;
-                    float arrive = cfg.cellArriveRadius;
-                    if ((hoverPt - p).sqrMagnitude < arrive * arrive)
+                    float dCell = (w - p).magnitude;
+                    float step = vel[i].magnitude * dt + 0.04f;
+                    if (dCell <= step || (w - p).sqrMagnitude < 0.0064f)
                     {
+                        pos[i] = w;
+                        vel[i] = Vector3.zero;
+                        Vector3 toHive = hivePos - w;
+                        headingAngle[i] = Mathf.Atan2(toHive.y, toHive.x) * Mathf.Rad2Deg;
+                        flightPitch[i] = 0f;
+                        turnRate[i] = 0f;
+                        rot[i] = Quaternion.LookRotation(new Vector3(Mathf.Cos(headingAngle[i] * Mathf.Deg2Rad), Mathf.Sin(headingAngle[i] * Mathf.Deg2Rad), 0f), Vector3.back);
                         BeginDrain(i, t);
                         return;
                     }
 
-                    slowDist = (goal - p).magnitude;
+                    slowDist = dCell;
                 }
                 else
                 {
@@ -892,32 +907,14 @@ namespace HoneyBeeRush.Bees
             }
 
             Vector3 w = CellWorldPosition(t);
-            float hover = HoverFor(t, targetFace[i]);
-            float bob = Mathf.Sin((time + phase[i]) * 7f) * Mathf.Min(cfg.drainBob, hover * 0.5f);
+            pos[i] = w;
+            vel[i] = Vector3.zero;
 
-            Vector3 sep = Separation(i);
-            Vector3 sepPlanar = sep - n * Vector3.Dot(sep, n);
-            Vector3 goal = w + n * (hover + bob) + sepPlanar * (cfg.separationWeight * 0.02f);
-
-            Vector3 wish = (goal - p) * cfg.DrainApproachGain;
-            float maxDrain = cfg.maxSpeedOut * 0.35f;
-            float wsq = wish.sqrMagnitude;
-            if (wsq > maxDrain * maxDrain && wsq > 1e-8f)
-            {
-                float ws = maxDrain / Mathf.Sqrt(wsq);
-                wish.x *= ws;
-                wish.y *= ws;
-                wish.z *= ws;
-            }
-
-            float dk = 1f - Mathf.Exp(-cfg.DrainDamping * dt);
-            Vector3 dv = vel[i];
-            dv.x += (wish.x - dv.x) * dk;
-            dv.y += (wish.y - dv.y) * dk;
-            dv.z += (wish.z - dv.z) * dk;
-            vel[i] = dv;
-
-            pos[i] = new Vector3(p.x + dv.x * dt, p.y + dv.y * dt, p.z + dv.z * dt);
+            Vector3 toHive = hivePos - w;
+            headingAngle[i] = Mathf.Atan2(toHive.y, toHive.x) * Mathf.Rad2Deg;
+            flightPitch[i] = 0f;
+            turnRate[i] = 0f;
+            rot[i] = Quaternion.LookRotation(new Vector3(Mathf.Cos(headingAngle[i] * Mathf.Deg2Rad), Mathf.Sin(headingAngle[i] * Mathf.Deg2Rad), 0f), Vector3.back);
         }
 
         private void BeginReturn(int i)
@@ -1016,21 +1013,26 @@ namespace HoneyBeeRush.Bees
 
         private bool MoveEgress(int i, float dt)
         {
-            int cell = egressCell[i];
-            int face = egressFace[i];
-            if (!m_hasVolume || cell < 0 || face < 0 || CellWorldPosition == null || boardController == null) return false;
+            enterTimer[i] += dt;
+            float duration = 0.45f;
+            float t = Mathf.Clamp01(enterTimer[i] / duration);
 
-            Vector3 w = CellWorldPosition(cell);
-            Vector3 n = boardController.WorldFaceNormal(face);
-            float lane = LaneDistance(w, n);
+            Vector3 start = enterFrom[i];
+            float riseHeight = Mathf.Max(0.75f, cfg.returnRise);
+            float targetY = Mathf.Min(start.y + riseHeight, hivePos.y - 0.5f);
+            float targetZ = m_flightZ;
+            Vector3 apex = new Vector3(Mathf.Lerp(start.x, hivePos.x, 0.2f), targetY, targetZ);
 
-            Vector3 p = pos[i];
-            if (Vector3.Dot(p - w, n) >= lane - cfg.LaneExtra * 0.5f || ToUnit(p).sqrMagnitude >= 1f) return false;
-
-            Vector3 to = (w + n * lane) - p;
+            Vector3 goal = Vector3.Lerp(apex, HiveEntryPoint, t * t);
+            Vector3 to = goal - pos[i];
             float d = to.magnitude;
-            Vector3 seek = d > 0.0001f ? to / d : n;
-            Steer(i, seek, cfg.maxSpeedHome * EgressSpeedMul, dt, EgressWanderMul, 0.5f);
+            Vector3 seek = d > 0.0001f ? to / d : Vector3.up;
+            Steer(i, seek, cfg.maxSpeedHome, dt, 0f, 0f);
+
+            if (t >= 1f || (pos[i].y >= targetY - 0.05f && pos[i].z <= targetZ + 0.1f))
+            {
+                return false;
+            }
             return true;
         }
 
@@ -1283,7 +1285,7 @@ namespace HoneyBeeRush.Bees
             turnRate[i] += (rate - turnRate[i]) * ks;
 
             float roll = Mathf.Clamp(turnRate[i] / 180f, -1f, 1f) * cfg.bankRoll;
-            float yaw = Mathf.Sin(time * cfg.waggleFreq + phase[i]) * cfg.waggleYawAmp;
+            float yaw = state[i] == BeeState.Draining ? 0f : Mathf.Sin(time * cfg.waggleFreq + phase[i]) * cfg.waggleYawAmp;
 
             rot[i] = Quaternion.LookRotation(f, Vector3.back) * Quaternion.Euler(0f, yaw, -roll);
         }
@@ -1297,11 +1299,11 @@ namespace HoneyBeeRush.Bees
 
                 int drained = targetCell[i];
                 int drainedFace = targetFace[i];
-                if (drained >= 0 && drainedFace >= 0 && CellWorldPosition != null && boardController != null)
+                if (drained >= 0 && CellWorldPosition != null && boardController != null)
                 {
-                    Vector3 hoverPt = CellWorldPosition(drained) + boardController.WorldFaceNormal(drainedFace) * HoverFor(drained, drainedFace);
+                    Vector3 cellPt = CellWorldPosition(drained);
                     float leash = cfg.diveMargin;
-                    if ((pos[i] - hoverPt).sqrMagnitude > leash * leash)
+                    if ((pos[i] - cellPt).sqrMagnitude > leash * leash)
                     {
                         state[i] = BeeState.ToCell;
                         drainTimer[i] = 0f;
@@ -1320,11 +1322,20 @@ namespace HoneyBeeRush.Bees
                 idleTimer[i] = 0f;
                 cargo[i] = true;
                 BeginReturn(i);
-                if (cell >= 0 && drainedFace >= 0)
+                if (cell >= 0)
                 {
                     egressCell[i] = cell;
                     egressFace[i] = drainedFace;
                     homeStage[i] = HomeStageEgress;
+                    enterFrom[i] = pos[i];
+                    enterTimer[i] = 0f;
+
+                    float riseHeight = Mathf.Max(0.75f, cfg.returnRise);
+                    Vector3 apex = new Vector3(Mathf.Lerp(pos[i].x, hivePos.x, 0.15f), pos[i].y + riseHeight, m_flightZ);
+                    Vector3 liftDir = (apex - pos[i]).normalized;
+                    vel[i] = liftDir * (cfg.maxSpeedHome * 0.45f);
+                    headingAngle[i] = Mathf.Atan2(liftDir.y, liftDir.x) * Mathf.Rad2Deg;
+                    flightPitch[i] = Mathf.Clamp(Mathf.Atan2(-liftDir.z, Mathf.Sqrt(liftDir.x * liftDir.x + liftDir.y * liftDir.y)) * Mathf.Rad2Deg, -cfg.MaxFlightPitch, cfg.MaxFlightPitch);
                 }
 
                 if (cell >= 0)
