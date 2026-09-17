@@ -98,8 +98,8 @@ namespace HoneyBeeRush.Gameplay.Domain
 
             if (level == null || level.cells == null || layout == null) return;
 
-            Vector3 tileScale = ComputeTileScale(layout);
-            m_layerPitch = MeasureLayerPitch(layout, tileScale);
+            Vector3 visualScale = CellController.ComputeVisualScale(m_cellPrefab, layout.CellWidth, layout.CellDepth);
+            m_layerPitch = ComputeLayerPitch(layout);
             float hexSize = layout.hexSize;
 
             for (int i = 0; i < level.cells.Count; i++)
@@ -113,7 +113,7 @@ namespace HoneyBeeRush.Gameplay.Domain
                 Vector3 localPos = HexLayout.ToLocal3(coord, hexSize, m_layerPitch);
 
                 CellController cell = LeanPool.Spawn(m_cellPrefab, m_boardRoot);
-                cell.Initialize(m_cells.Count, coord, def.colorType, def.nectar, def.locked, localPos, tileScale, materials);
+                cell.Initialize(m_cells.Count, coord, def.colorType, def.nectar, def.locked, localPos, visualScale, layout.CellWidth, layout.CellDepth, materials);
                 cell.SetEnclosedCulling(layout.cullEnclosedCells);
 
                 cell.Died += OnCellDiedInternal;
@@ -175,8 +175,8 @@ namespace HoneyBeeRush.Gameplay.Domain
             LayoutConfig layout = m_layout;
             if (layout == null || m_boardRoot == null || m_cells.Count == 0) return;
 
-            Vector3 tileScale = ComputeTileScale(layout);
-            m_layerPitch = MeasureLayerPitch(layout, tileScale);
+            Vector3 visualScale = CellController.ComputeVisualScale(m_cellPrefab, layout.CellWidth, layout.CellDepth);
+            m_layerPitch = ComputeLayerPitch(layout);
 
             float hexSize = layout.hexSize;
             float absHex = Mathf.Abs(hexSize);
@@ -226,7 +226,7 @@ namespace HoneyBeeRush.Gameplay.Domain
 
                 if (positionAllCells || cell.Alive || !cell.gameObject.activeSelf)
                 {
-                    cell.ApplyLayout(localPos, tileScale);
+                    cell.ApplyLayout(localPos, visualScale, layout.CellWidth, layout.CellDepth);
                 }
             }
             m_radiusLocal = farthest + cellRadius;
@@ -250,19 +250,9 @@ namespace HoneyBeeRush.Gameplay.Domain
             ApplyViewRotation();
         }
 
-        private static Vector3 ComputeTileScale(LayoutConfig layout)
+        private static float ComputeLayerPitch(LayoutConfig layout)
         {
-            float xy = layout.hexSize / Mathf.Max(0.0001f, layout.tileMeshCircumRadius) * layout.tileGapScale;
-            float z = layout.tileDepth / Mathf.Max(0.0001f, layout.tileMeshDepth);
-            return new Vector3(xy, xy, z);
-        }
-
-        private float MeasureLayerPitch(LayoutConfig layout, Vector3 tileScale)
-        {
-            float depth = m_cellPrefab != null ? m_cellPrefab.MeasureLocalDepth(tileScale) : 0f;
-            float pitch = depth > 0.0001f
-                ? depth / Mathf.Max(0.0001f, layout.tileGapScale)
-                : HexLayout.Sqrt3 * Mathf.Abs(layout.hexSize);
+            float pitch = layout.CellDepth / Mathf.Max(0.0001f, layout.tileGapScale);
             return Mathf.Max(0.0001f, pitch * layout.LayerSpacing);
         }
 

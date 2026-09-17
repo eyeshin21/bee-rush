@@ -14,6 +14,11 @@ namespace HoneyBeeRush.Gameplay.Core
         [SerializeField] private MeshRenderer m_renderer;
         [SerializeField] private GameObject m_lockRoot;
         [SerializeField] private MeshRenderer m_lockRenderer;
+        [SerializeField] private float m_referenceWidth = 0.8227f;
+        [SerializeField] private float m_referenceDepth = 0.8227f;
+        [SerializeField] private int m_visualDepthAxis = 1;
+        [SerializeField] private float m_lockRadiusRatio = 0.43f;
+        [SerializeField] private float m_lockStandoff = 0.35f;
 
         public int CellId { get; private set; }
         public int Id => CellId;
@@ -31,19 +36,114 @@ namespace HoneyBeeRush.Gameplay.Core
         public Vector3 HomeLocalPos { get; private set; }
         public Vector3 HomeScale { get; private set; }
 
-        public void ApplyLayout(Vector3 localPosition, Vector3 scale)
+        public Transform VisualRoot => m_meshFilter != null ? m_meshFilter.transform : null;
+
+        public void ApplyLayout(Vector3 localPosition, Vector3 visualScale, float cellWidth, float cellDepth)
         {
             HomeLocalPos = localPosition;
-            HomeScale = scale;
+            HomeScale = Vector3.one;
             transform.localPosition = localPosition;
-            transform.localScale = scale;
+            transform.localScale = Vector3.one;
+            ApplyVisualSizing(visualScale, cellWidth, cellDepth);
         }
+
+        public void ApplyVisualSizing(Vector3 visualScale, float cellWidth, float cellDepth)
+        {
+            CaptureAuthoredVisual();
+
+            Transform visual = VisualRoot;
+            if (visual != null && visual != transform) visual.localScale = visualScale;
+
+            if (m_lockRoot == null) return;
+
+            float ratio = m_lockRadiusRatio > 0f ? m_lockRadiusRatio : 0.43f;
+            float standoff = m_lockStandoff > 0f ? m_lockStandoff : 0.35f;
+            float lockScale = Mathf.Max(0.0001f, cellWidth * 0.5f * ratio);
+
+            Transform lockTransform = m_lockRoot.transform;
+            lockTransform.localScale = new Vector3(lockScale, lockScale, lockScale);
+            lockTransform.localPosition = new Vector3(0f, 0f, -(cellDepth * 0.5f + lockScale * standoff));
+        }
+
+        public bool MeasureVisualMesh(out float lateralExtent, out float depthExtent, out int depthAxis)
+        {
+            lateralExtent = 0f;
+            depthExtent = 0f;
+            depthAxis = 1;
+
+            MeshFilter filter = m_meshFilter != null ? m_meshFilter : GetComponentInChildren<MeshFilter>(true);
+            Mesh mesh = filter != null ? filter.sharedMesh : null;
+            if (mesh == null) return false;
+
+            Vector3[] vertices = mesh.vertices;
+            if (vertices == null || vertices.Length == 0) return false;
+
+            var min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            var max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+            var radius = new Vector3();
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 v = vertices[i];
+                for (int axis = 0; axis < 3; axis++)
+                {
+                    if (v[axis] < min[axis]) min[axis] = v[axis];
+                    if (v[axis] > max[axis]) max[axis] = v[axis];
+
+                    float p1 = v[(axis + 1) % 3];
+                    float p2 = v[(axis + 2) % 3];
+                    float r = Mathf.Sqrt(p1 * p1 + p2 * p2);
+                    if (r > radius[axis]) radius[axis] = r;
+                }
+            }
+
+            depthAxis = 0;
+            for (int axis = 1; axis < 3; axis++)
+            {
+                if (radius[axis] < radius[depthAxis]) depthAxis = axis;
+            }
+
+            depthExtent = max[depthAxis] - min[depthAxis];
+            lateralExtent = float.MaxValue;
+            for (int axis = 0; axis < 3; axis++)
+            {
+                if (axis == depthAxis) continue;
+                float extent = max[axis] - min[axis];
+                if (extent < lateralExtent) lateralExtent = extent;
+            }
+
+            return lateralExtent > 0.000001f && depthExtent > 0.000001f;
+        }
+
+        public static Vector3 ComputeVisualScale(CellController prefab, float targetWidth, float targetDepth)
+        {
+            if (prefab == null) return Vector3.one;
+
+            float meshWidth;
+            float meshDepth;
+            int depthAxis;
+            if (prefab.MeasureVisualMesh(out meshWidth, out meshDepth, out depthAxis))
+            {
+                float measured = Mathf.Abs(targetWidth) / meshWidth;
+                Vector3 scale = new Vector3(measured, measured, measured);
+                scale[depthAxis] = Mathf.Abs(targetDepth) / meshDepth;
+                return scale;
+            }
+
+            prefab.CaptureAuthoredVisual();
+            float planar = prefab.m_referenceWidth > 0f ? targetWidth / prefab.m_referenceWidth : 1f;
+            float depth = prefab.m_referenceDepth > 0f ? targetDepth / prefab.m_referenceDepth : 1f;
+            int axis = Mathf.Clamp(prefab.m_visualDepthAxis, 0, 2);
+
+            Vector3 fallback = prefab.m_authoredVisualScale * planar;
+            fallback[axis] = prefab.m_authoredVisualScale[axis] * depth;
+            return fallback;
+        }
+        private Vector3 m_authoredVisualScale = Vector3.one;
+        private bool m_visualCaptured;
         private MaterialPropertyBlock m_mpb;
         private ColorMaterialMapping m_materials;
         private Coroutine m_activeRoutine;
         private bool m_cullEnclosed;
-
-        private static readonly Vector3[] s_boundsCorners = new Vector3[8];
 
         public event Action<CellController> Died;
         public event Action<CellController> Unlocked;
@@ -54,9 +154,27 @@ namespace HoneyBeeRush.Gameplay.Core
             if (m_mpb == null) m_mpb = new MaterialPropertyBlock();
             if (m_meshFilter == null) m_meshFilter = GetComponent<MeshFilter>();
             if (m_renderer == null) m_renderer = GetComponent<MeshRenderer>();
+            CaptureAuthoredVisual();
         }
 
-        public void Initialize(int id, HexCoord3 coord, ColorType colorType, int nectar, bool locked, Vector3 localPos, Vector3 scale, ColorMaterialMapping materials)
+        private void CaptureAuthoredVisual()
+        {
+            if (m_visualCaptured) return;
+
+            Transform visual = VisualRoot;
+            m_authoredVisualScale = visual != null && visual != transform ? visual.localScale : Vector3.one;
+            m_visualCaptured = true;
+        }
+
+        public void BakeVisualReference(float cellWidth, float cellDepth, int depthAxis)
+        {
+            m_referenceWidth = cellWidth;
+            m_referenceDepth = cellDepth;
+            m_visualDepthAxis = Mathf.Clamp(depthAxis, 0, 2);
+            m_visualCaptured = false;
+        }
+
+        public void Initialize(int id, HexCoord3 coord, ColorType colorType, int nectar, bool locked, Vector3 localPos, Vector3 visualScale, float cellWidth, float cellDepth, ColorMaterialMapping materials)
         {
             CellId = id;
             Coord = coord;
@@ -70,10 +188,11 @@ namespace HoneyBeeRush.Gameplay.Core
             OpenFaces = 0;
 
             HomeLocalPos = localPos;
-            HomeScale = scale;
+            HomeScale = Vector3.one;
 
             transform.localPosition = localPos;
-            transform.localScale = scale;
+            transform.localScale = Vector3.one;
+            ApplyVisualSizing(visualScale, cellWidth, cellDepth);
 
             if (m_lockRoot != null)
             {
@@ -106,43 +225,6 @@ namespace HoneyBeeRush.Gameplay.Core
             bool visible = !m_cullEnclosed || !Alive || Exposed;
             if (m_renderer != null) m_renderer.enabled = visible;
             if (m_lockRenderer != null) m_lockRenderer.enabled = visible;
-        }
-
-        public float MeasureLocalDepth(Vector3 rootScale)
-        {
-            MeshFilter filter = m_meshFilter != null ? m_meshFilter : GetComponentInChildren<MeshFilter>(true);
-            if (filter == null) return 0f;
-
-            Mesh mesh = filter.sharedMesh;
-            if (mesh == null) return 0f;
-
-            Matrix4x4 toRoot = Matrix4x4.Scale(rootScale) * transform.worldToLocalMatrix * filter.transform.localToWorldMatrix;
-            Bounds bounds = mesh.bounds;
-            Vector3 c = bounds.center;
-            Vector3 e = bounds.extents;
-
-            int index = 0;
-            for (int x = -1; x <= 1; x += 2)
-            {
-                for (int y = -1; y <= 1; y += 2)
-                {
-                    for (int z = -1; z <= 1; z += 2)
-                    {
-                        s_boundsCorners[index++] = new Vector3(c.x + e.x * x, c.y + e.y * y, c.z + e.z * z);
-                    }
-                }
-            }
-
-            float minZ = float.MaxValue;
-            float maxZ = float.MinValue;
-            for (int i = 0; i < s_boundsCorners.Length; i++)
-            {
-                float pz = toRoot.MultiplyPoint3x4(s_boundsCorners[i]).z;
-                if (pz < minZ) minZ = pz;
-                if (pz > maxZ) maxZ = pz;
-            }
-
-            return Mathf.Max(0f, maxZ - minZ);
         }
 
         public bool ApplyDrain()

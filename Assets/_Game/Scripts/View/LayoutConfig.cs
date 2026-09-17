@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using HoneyBeeRush.Core;
 
 namespace HoneyBeeRush.View
 {
@@ -7,10 +8,8 @@ namespace HoneyBeeRush.View
     public sealed class LayoutConfig
     {
         public float hexSize = 0.5f;
-        public float tileDepth = 0.62f;
+        public float tileDepth = 0.8227f;
         public float tileGapScale = 0.935f;
-        public float tileMeshCircumRadius = 1.11f;
-        public float tileMeshDepth = 4f;
         public float layerSpacing = 1f;
         public bool cullEnclosedCells = true;
 
@@ -72,6 +71,12 @@ namespace HoneyBeeRush.View
         public float BoardFitWidth => Mathf.Min(boardFitWidth, PanelWidth - BoardPanelPadding * 2f);
 
         public float BoardFitHeight => Mathf.Min(boardFitHeight, PanelHeight - BoardPanelPadding * 2f);
+
+        public float CellPitch => HexLayout.Sqrt3 * Mathf.Abs(hexSize);
+
+        public float CellWidth => CellPitch * (tileGapScale > 0f ? tileGapScale : 1f);
+
+        public float CellDepth => tileDepth > 0f ? tileDepth : CellWidth;
 
         public float LayerSpacing => layerSpacing > 0f ? layerSpacing : 1f;
 

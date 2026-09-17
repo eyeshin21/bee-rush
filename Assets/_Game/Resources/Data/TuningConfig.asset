@@ -15,10 +15,8 @@ MonoBehaviour:
   m_globalSpeedMultiplier: 1
   m_layout:
     hexSize: 0.5
-    tileDepth: 0.62
+    tileDepth: 0.8227
     tileGapScale: 0.95
-    tileMeshCircumRadius: 1.05
-    tileMeshDepth: 4
     layerSpacing: 1
     cullEnclosedCells: 1
     boardCentre: {x: 0, y: 1.685}
