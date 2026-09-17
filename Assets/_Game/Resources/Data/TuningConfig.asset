@@ -16,8 +16,8 @@ MonoBehaviour:
   m_layout:
     hexSize: 0.5
     tileDepth: 0.8227
-    tileGapScale: 0.95
-    layerSpacing: 1
+    tileGapScale: 1.05
+    layerSpacing: 0.99
     cullEnclosedCells: 1
     boardCentre: {x: 0, y: 1.685}
     boardFitWidth: 5.15
